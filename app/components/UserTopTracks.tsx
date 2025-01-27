@@ -4,7 +4,6 @@ import {
   TrackObject,
 } from "@/services/itemsService";
 import { useEffect, useState } from "react";
-import styles from "./styles.module.css";
 import Loading from "./Loading";
 import TrackComponent from "./TrackComponent";
 import { SetLimitComponent } from "./SetLimitComponent";
@@ -24,19 +23,19 @@ export default function UserTopTracks({ token }: UserTopTracksProps) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserData = async (token: string) => {
-    setIsLoading(true);
-    try {
-      const data = await getUserTopItemsTracks(token, timeRange, limit);
-      setTracks(data.items);
-    } catch (error) {}
-
-    setIsLoading(false);
-  };
-
   useEffect(() => {
+    const fetchUserData = async (token: string) => {
+      setIsLoading(true);
+      try {
+        const data = await getUserTopItemsTracks(token, timeRange, limit);
+        setTracks(data.items);
+      } catch (_) {}
+
+      setIsLoading(false);
+    };
+
     fetchUserData(token);
-  }, [timeRange, limit]);
+  }, [timeRange, limit, token]);
 
   if (tracks.length == 0) return <Loading />;
 

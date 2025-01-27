@@ -10,7 +10,7 @@ export default function AppBarUser({ userData, onLogout }: AppBarUserProps) {
     <div className="flex flex-row bg-gray-900 bg-opacity-75 w-full justify-between p-4 items-center">
       <div className="flex flex-row gap-2">
         {userData.images.length > 0 && (
-          <img className="size-12 rounded-full" src={userData.images[0].url} />
+          <img alt="" className="size-12 rounded-full" src={userData.images[0].url} />
         )}
 
         <div>

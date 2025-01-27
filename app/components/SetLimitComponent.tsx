@@ -6,7 +6,7 @@ interface SetLimitComponentProps {
 export function SetLimitComponent({ limit, setLimit }: SetLimitComponentProps) {
   return (
     <div className="flex flex-row gap-2 items-center">
-      {[5, 10, 30, 50].map((value) => (
+      {[10, 30, 50].map((value) => (
         <div
           key={value}
           onClick={() => setLimit(value)}

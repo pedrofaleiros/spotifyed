@@ -13,21 +13,21 @@ export default function Home() {
 
   const router = useRouter();
 
-  const fetchUserData = async (token: string) => {
-    try {
-      const data = await getUserProfile(token, router);
-      setUserData(data);
-    } catch (error) {
-      router.push("/");
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     router.push("/");
   };
 
   useEffect(() => {
+    const fetchUserData = async (token: string) => {
+      try {
+        const data = await getUserProfile(token, router);
+        setUserData(data);
+      } catch (_) {
+        router.push("/");
+      }
+    };
+
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("access_token");
       const expiresIn = localStorage.getItem("expires_in");

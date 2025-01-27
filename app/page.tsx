@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SpotifyIcon from "../public/icons/spotify.svg";
 import Image from "next/image";
 import Loading from "./components/Loading";
@@ -10,7 +10,6 @@ import axios from "axios";
 export default function Home() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   const handleLogin = () => {
@@ -38,10 +37,12 @@ export default function Home() {
       setCookies(access_token, refresh_token, expirationTime.toString());
       setAccessToken(access_token);
       router.push("/home");
-    } catch (error) {}
+    } catch (_) {}
   };
 
   const verifyTokens = async () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    
     const token = searchParams.get("access_token");
     const refreshToken = searchParams.get("refresh_token");
     const expiresIn = searchParams.get("expires_in");
@@ -72,7 +73,7 @@ export default function Home() {
     verifyTokens().then(() => {
       setIsLoading(false);
     });
-  }, [searchParams]);
+  }, []);
 
   if (isLoading) return <Loading />;
 
