@@ -9,7 +9,7 @@ export default function TrackComponent({ track, index }: TrackComponentProps) {
   return (
     <div
       key={track.id}
-      className=" relative pt-0 active:pt-96 rounded-md overflow-hidden shadow-md"
+      className=" relative pt-0 rounded-md overflow-hidden shadow-md"
       style={{
         backgroundImage: `url(${track.album.images[0].url})`,
         backgroundSize: "cover",
