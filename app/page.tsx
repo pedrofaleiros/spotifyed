@@ -37,42 +37,46 @@ export default function Home() {
       setCookies(access_token, refresh_token, expirationTime.toString());
       setAccessToken(access_token);
       router.push("/home");
-    } catch (_) {}
-  };
-
-  const verifyTokens = async () => {
-    const searchParams = new URLSearchParams(window.location.search);
-    
-    const token = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
-    const expiresIn = searchParams.get("expires_in");
-
-    if (token && refreshToken && expiresIn) {
-      const expirationTime = Date.now() + parseInt(expiresIn) * 1000;
-
-      setCookies(token, refreshToken, expirationTime.toString());
-      setAccessToken(token);
-      router.push("/home");
-    } else {
-      const storedAccessToken = localStorage.getItem("access_token");
-      const storedRefreshToken = localStorage.getItem("refresh_token");
-      const storedExpiresIn = localStorage.getItem("expires_in");
-
-      if (storedAccessToken && storedRefreshToken && storedExpiresIn) {
-        if (Date.now() < Number(storedExpiresIn)) {
-          setAccessToken(storedAccessToken);
-          router.push("/home");
-        } else {
-          await makeRequestToken(storedRefreshToken);
-        }
-      }
+    } catch (_) {
+      alert("Erro makeRequestToken");
     }
   };
 
   useEffect(() => {
-    verifyTokens().then(() => {
+    const verifyTokens = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+
+      const token = searchParams.get("access_token");
+      const refreshToken = searchParams.get("refresh_token");
+      const expiresIn = searchParams.get("expires_in");
+
+      if (token && refreshToken && expiresIn) {
+        const expirationTime = Date.now() + parseInt(expiresIn) * 1000;
+
+        setCookies(token, refreshToken, expirationTime.toString());
+        setAccessToken(token);
+        router.push("/home");
+      } else {
+        const storedAccessToken = localStorage.getItem("access_token");
+        const storedRefreshToken = localStorage.getItem("refresh_token");
+        const storedExpiresIn = localStorage.getItem("expires_in");
+
+        if (storedAccessToken && storedRefreshToken && storedExpiresIn) {
+          if (Date.now() < Number(storedExpiresIn)) {
+            setAccessToken(storedAccessToken);
+            router.push("/home");
+          } else {
+            await makeRequestToken(storedRefreshToken);
+          }
+        } else {
+          alert("Faça o login");
+        }
+      }
+
       setIsLoading(false);
-    });
+    };
+
+    verifyTokens();
   }, []);
 
   if (isLoading) return <Loading />;

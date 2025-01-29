@@ -45,6 +45,7 @@ export async function GET(req: Request) {
     const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`;
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: "Failed to retrieve tokens", details: error },
       { status: 500 }
