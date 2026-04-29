@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SpotifyIcon from "../public/icons/spotify.svg";
 import Image from "next/image";
@@ -13,45 +13,49 @@ export default function Home() {
   const router = useRouter();
 
   const handleLogin = () => {
-    if (!isLoading) {
-      setIsLoading(true);
-      window.location.href = "/api/login";
-    }
+    setIsLoading(true);
+    window.location.assign("/api/login");
   };
 
-  const setCookies = (access: string, refresh: string, expires: string) => {
-    localStorage.setItem("access_token", access);
-    localStorage.setItem("refresh_token", refresh);
-    localStorage.setItem("expires_in", expires);
-  };
+  const setCookies = useCallback(
+    (access: string, refresh: string, expires: string) => {
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
+      localStorage.setItem("expires_in", expires);
+    },
+    []
+  );
 
-  const clearAuth = () => {
+  const clearAuth = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("expires_in");
-  };
+  }, []);
 
-  const makeRequestToken = async (refreshToken: string) => {
-    try {
-      const response = await axios.get(
-        `/api/refresh_token?refresh_token=${refreshToken}`
-      );
+  const makeRequestToken = useCallback(
+    async (refreshToken: string) => {
+      try {
+        const response = await axios.get(
+          `/api/refresh_token?refresh_token=${refreshToken}`
+        );
 
-      const { access_token, refresh_token, expires_in } = response.data;
+        const { access_token, refresh_token, expires_in } = response.data;
 
-      const expirationTime = Date.now() + parseInt(expires_in) * 1000;
-      setCookies(
-        access_token,
-        refresh_token || refreshToken,
-        expirationTime.toString()
-      );
-      setAccessToken(access_token);
-      router.push("/home");
-    } catch (_) {
-      clearAuth();
-      alert("Erro makeRequestToken");
-    }
-  };
+        const expirationTime = Date.now() + parseInt(expires_in) * 1000;
+        setCookies(
+          access_token,
+          refresh_token || refreshToken,
+          expirationTime.toString()
+        );
+        setAccessToken(access_token);
+        router.push("/home");
+      } catch (_) {
+        clearAuth();
+        alert("Erro makeRequestToken");
+      }
+    },
+    [clearAuth, router, setCookies]
+  );
 
   useEffect(() => {
     const verifyTokens = async () => {
@@ -88,7 +92,7 @@ export default function Home() {
     };
 
     verifyTokens();
-  }, []);
+  }, [clearAuth, makeRequestToken, router, setCookies]);
 
   if (isLoading) return <Loading />;
 

@@ -54,18 +54,16 @@ export default function Home() {
       }
     };
 
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("access_token");
-      const expiresIn = localStorage.getItem("expires_in");
+    const token = localStorage.getItem("access_token");
+    const expiresIn = localStorage.getItem("expires_in");
 
-      if (!token || Date.now() > Number(expiresIn)) {
-        clearAuth();
-        router.push("/");
-        return;
-      }
-
-      fetchUserData(token);
+    if (!token || Date.now() > Number(expiresIn)) {
+      clearAuth();
+      router.push("/");
+      return;
     }
+
+    fetchUserData(token);
 
     return () => {
       isMounted = false;

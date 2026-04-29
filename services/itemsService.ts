@@ -40,7 +40,7 @@ export enum ItemsTimeRange {
 }
 
 export async function getUserTopItemsTracks(accessToken: string, timeRange: ItemsTimeRange, limit: number): Promise<UserItemsTracks> {
-    var validatedLimit = 10;
+    let validatedLimit = 10;
     if (limit > 0 && limit <= 50) {
         validatedLimit = limit;
     }
