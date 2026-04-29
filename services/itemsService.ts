@@ -40,7 +40,7 @@ export enum ItemsTimeRange {
 }
 
 export async function getUserTopItemsTracks(accessToken: string, timeRange: ItemsTimeRange, limit: number): Promise<UserItemsTracks> {
-    var validatedLimit = 10;
+    let validatedLimit = 10;
     if (limit > 0 && limit <= 50) {
         validatedLimit = limit;
     }
@@ -58,7 +58,7 @@ export async function getUserTopItemsTracks(accessToken: string, timeRange: Item
     );
 
     if (!response.ok) {
-        throw new Error('Falha ao obter dados do usuário');
+        throw new Error(`Falha ao obter músicas mais ouvidas (${response.status})`);
     }
 
     return response.json();

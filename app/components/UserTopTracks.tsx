@@ -22,6 +22,7 @@ export default function UserTopTracks({ token }: UserTopTracksProps) {
   const [limit, setLimit] = useState<number>(10);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const periodLabel = {
     [ItemsTimeRange.short_term]: "último mês",
     [ItemsTimeRange.medium_term]: "últimos 6 meses",
@@ -31,12 +32,19 @@ export default function UserTopTracks({ token }: UserTopTracksProps) {
   useEffect(() => {
     const fetchUserData = async (token: string) => {
       setIsLoading(true);
+      setErrorMessage(null);
+
       try {
         const data = await getUserTopItemsTracks(token, timeRange, limit);
-        setTracks(data.items);
-      } catch (_) {}
-
-      setIsLoading(false);
+        setTracks(data.items || []);
+      } catch (error) {
+        setTracks([]);
+        setErrorMessage(
+          "Não foi possível carregar as músicas mais ouvidas dessa conta."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchUserData(token);
@@ -85,13 +93,20 @@ export default function UserTopTracks({ token }: UserTopTracksProps) {
         </div>
       )}
 
-      {!isLoading && tracks.length === 0 && (
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-8 text-center text-gray-400">
-          Nenhuma faixa encontrada para esse período.
+      {!isLoading && errorMessage && (
+        <div className="rounded-lg border border-red-400/20 bg-red-400/10 px-4 py-8 text-center text-red-100">
+          {errorMessage}
         </div>
       )}
 
-      {!isLoading && tracks.length > 0 && (
+      {!isLoading && !errorMessage && tracks.length === 0 && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-8 text-center text-gray-400">
+          Nenhuma faixa encontrada para esse período. Tente selecionar 6 meses
+          ou 1 ano.
+        </div>
+      )}
+
+      {!isLoading && !errorMessage && tracks.length > 0 && (
         <div className="grid grid-cols-1 gap-3">
           <div className="hidden grid-cols-[3rem_4.5rem_minmax(0,1.25fr)_minmax(0,1fr)_7rem] items-center gap-3 px-3 text-xs font-semibold uppercase text-gray-500 sm:grid">
             <span>#</span>
