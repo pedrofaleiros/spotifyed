@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import Home from "./page";
 import { getUserProfile } from "@/services/userServices";
-import { pushMock } from "../../test-utils/navigation";
+import { replaceMock } from "../../test-utils/navigation";
 
 vi.mock("@/services/userServices", () => ({
   getUserProfile: vi.fn(),
@@ -21,7 +21,7 @@ describe("authenticated home page", () => {
   it("redirects to login when no token is stored", async () => {
     render(<Home />);
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/"));
     expect(localStorage.getItem("access_token")).toBeNull();
   });
 
@@ -32,12 +32,13 @@ describe("authenticated home page", () => {
 
     render(<Home />);
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/"));
     expect(localStorage.getItem("refresh_token")).toBeNull();
   });
 
   it("loads the user profile and renders the ranking", async () => {
     localStorage.setItem("access_token", "access");
+    localStorage.setItem("refresh_token", "refresh");
     localStorage.setItem("expires_in", "9999999999999");
     mockedGetUserProfile.mockResolvedValue({
       id: "user-1",
@@ -60,6 +61,7 @@ describe("authenticated home page", () => {
 
   it("renders nothing when the profile response is empty", async () => {
     localStorage.setItem("access_token", "access");
+    localStorage.setItem("refresh_token", "refresh");
     localStorage.setItem("expires_in", "9999999999999");
     mockedGetUserProfile.mockResolvedValue(undefined as never);
 
@@ -87,7 +89,8 @@ describe("authenticated home page", () => {
     expect((await screen.findByText("Pedro")).textContent).toBe("Pedro");
     fireEvent.click(screen.getByRole("button", { name: "Sair" }));
     await waitFor(() => expect(localStorage.getItem("access_token")).toBeNull());
-    expect(pushMock).toHaveBeenCalledWith("/");
+    expect(sessionStorage.getItem("spotifyed_logout_intent")).toBe("true");
+    expect(replaceMock).toHaveBeenCalledWith("/");
   });
 
   it("clears auth and shows a retry action when the profile request fails", async () => {
@@ -102,14 +105,15 @@ describe("authenticated home page", () => {
       await screen.findByText("Não foi possível carregar seu perfil do Spotify.")
     ).toBeInTheDocument();
     expect(localStorage.getItem("access_token")).toBeNull();
-    expect(pushMock).toHaveBeenCalledWith("/");
+    expect(replaceMock).toHaveBeenCalledWith("/");
 
     await userEvent.click(screen.getByRole("button", { name: "Entrar novamente" }));
-    expect(pushMock).toHaveBeenCalledWith("/");
+    expect(replaceMock).toHaveBeenCalledWith("/");
   });
 
   it("ignores a successful profile response after unmount", async () => {
     localStorage.setItem("access_token", "access");
+    localStorage.setItem("refresh_token", "refresh");
     localStorage.setItem("expires_in", "9999999999999");
     let resolveProfile: (value: Awaited<ReturnType<typeof getUserProfile>>) => void =
       () => undefined;
@@ -134,7 +138,7 @@ describe("authenticated home page", () => {
       });
     });
 
-    expect(pushMock).not.toHaveBeenCalledWith("/");
+    expect(replaceMock).not.toHaveBeenCalledWith("/");
   });
 
   it("ignores a failed profile response after unmount", async () => {
@@ -159,6 +163,6 @@ describe("authenticated home page", () => {
     });
 
     expect(localStorage.getItem("access_token")).toBeNull();
-    expect(pushMock).not.toHaveBeenCalledWith("/");
+    expect(replaceMock).not.toHaveBeenCalledWith("/");
   });
 });

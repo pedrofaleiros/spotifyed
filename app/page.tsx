@@ -6,6 +6,12 @@ import SpotifyIcon from "../public/icons/spotify.svg";
 import Image from "next/image";
 import Loading from "./components/Loading";
 import axios from "axios";
+import {
+  clearStoredAuth,
+  consumeLogoutIntent,
+  getStoredAuth,
+  setStoredAuth,
+} from "./authStorage";
 
 export default function Home() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -17,19 +23,15 @@ export default function Home() {
     window.location.assign("/api/login");
   };
 
-  const setCookies = useCallback(
+  const saveAuth = useCallback(
     (access: string, refresh: string, expires: string) => {
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
-      localStorage.setItem("expires_in", expires);
+      setStoredAuth(access, refresh, expires);
     },
     []
   );
 
   const clearAuth = useCallback(() => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("expires_in");
+    clearStoredAuth();
   }, []);
 
   const makeRequestToken = useCallback(
@@ -42,19 +44,19 @@ export default function Home() {
         const { access_token, refresh_token, expires_in } = response.data;
 
         const expirationTime = Date.now() + parseInt(expires_in) * 1000;
-        setCookies(
+        saveAuth(
           access_token,
           refresh_token || refreshToken,
           expirationTime.toString()
         );
         setAccessToken(access_token);
-        router.push("/home");
+        router.replace("/home");
       } catch (_) {
         clearAuth();
         alert("Erro makeRequestToken");
       }
     },
-    [clearAuth, router, setCookies]
+    [clearAuth, router, saveAuth]
   );
 
   useEffect(() => {
@@ -68,20 +70,24 @@ export default function Home() {
       if (token && refreshToken && expiresIn) {
         const expirationTime = Date.now() + parseInt(expiresIn) * 1000;
 
-        setCookies(token, refreshToken, expirationTime.toString());
+        setStoredAuth(token, refreshToken, expirationTime.toString());
         setAccessToken(token);
-        router.push("/home");
+        router.replace("/home");
       } else {
-        const storedAccessToken = localStorage.getItem("access_token");
-        const storedRefreshToken = localStorage.getItem("refresh_token");
-        const storedExpiresIn = localStorage.getItem("expires_in");
+        if (consumeLogoutIntent()) {
+          clearAuth();
+          setIsLoading(false);
+          return;
+        }
 
-        if (storedAccessToken && storedRefreshToken && storedExpiresIn) {
-          if (Date.now() < Number(storedExpiresIn)) {
-            setAccessToken(storedAccessToken);
-            router.push("/home");
+        const storedAuth = getStoredAuth();
+
+        if (storedAuth) {
+          if (Date.now() < Number(storedAuth.expiresIn)) {
+            setAccessToken(storedAuth.accessToken);
+            router.replace("/home");
           } else {
-            await makeRequestToken(storedRefreshToken);
+            await makeRequestToken(storedAuth.refreshToken);
           }
         } else {
           clearAuth();
@@ -92,7 +98,7 @@ export default function Home() {
     };
 
     verifyTokens();
-  }, [clearAuth, makeRequestToken, router, setCookies]);
+  }, [clearAuth, makeRequestToken, router]);
 
   if (isLoading) return <Loading />;
 

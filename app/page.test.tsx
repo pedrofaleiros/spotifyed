@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Home from "./page";
-import { pushMock } from "../test-utils/navigation";
+import { replaceMock } from "../test-utils/navigation";
 
 vi.mock("axios", () => ({
   default: {
@@ -38,7 +38,7 @@ describe("login page", () => {
 
     render(<Home />);
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/home"));
     expect(localStorage.getItem("access_token")).toBe("access");
     expect(localStorage.getItem("refresh_token")).toBe("refresh");
     expect(localStorage.getItem("expires_in")).toBe("4000");
@@ -51,8 +51,24 @@ describe("login page", () => {
 
     render(<Home />);
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/home"));
     expect(mockedAxios.get).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-enter after a logout intent", async () => {
+    sessionStorage.setItem("spotifyed_logout_intent", "true");
+    localStorage.setItem("access_token", "stored-access");
+    localStorage.setItem("refresh_token", "stored-refresh");
+    localStorage.setItem("expires_in", "2000");
+
+    render(<Home />);
+
+    expect(
+      await screen.findByRole("button", { name: "Entrar com Spotify" })
+    ).toBeInTheDocument();
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(sessionStorage.getItem("spotifyed_logout_intent")).toBeNull();
+    expect(replaceMock).not.toHaveBeenCalledWith("/home");
   });
 
   it("refreshes an expired stored access token", async () => {
@@ -74,7 +90,7 @@ describe("login page", () => {
         "/api/refresh_token?refresh_token=stored-refresh"
       )
     );
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/home"));
     expect(localStorage.getItem("access_token")).toBe("new-access");
     expect(localStorage.getItem("refresh_token")).toBe("new-refresh");
     expect(localStorage.getItem("expires_in")).toBe("11000");
@@ -93,7 +109,7 @@ describe("login page", () => {
 
     render(<Home />);
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/home"));
     expect(localStorage.getItem("refresh_token")).toBe("stored-refresh");
   });
 

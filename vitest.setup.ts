@@ -2,11 +2,12 @@ import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { pushMock } from "./test-utils/navigation";
+import { pushMock, replaceMock } from "./test-utils/navigation";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
+    replace: replaceMock,
   }),
 }));
 
@@ -28,4 +29,5 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
 });
