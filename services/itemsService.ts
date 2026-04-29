@@ -58,7 +58,7 @@ export async function getUserTopItemsTracks(accessToken: string, timeRange: Item
     );
 
     if (!response.ok) {
-        throw new Error('Falha ao obter dados do usuário');
+        throw new Error(`Falha ao obter músicas mais ouvidas (${response.status})`);
     }
 
     return response.json();
