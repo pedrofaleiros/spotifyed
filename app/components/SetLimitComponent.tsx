@@ -5,19 +5,20 @@ interface SetLimitComponentProps {
 
 export function SetLimitComponent({ limit, setLimit }: SetLimitComponentProps) {
   return (
-    <div className="flex flex-row gap-2 items-center">
+    <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-gray-950 p-1">
       {[10, 30, 50].map((value) => (
-        <div
+        <button
+          type="button"
           key={value}
           onClick={() => setLimit(value)}
-          className={`cursor-pointer rounded-full px-4 py-1 ${
+          className={`min-w-12 rounded-md px-3 py-2 text-sm font-semibold transition ${
             limit === value
-              ? "bg-blue-600 text-gray-950 font-semibold"
-              : "border-blue-600 border-[1px] text-gray-300"
+              ? "bg-white text-gray-950"
+              : "text-gray-400 hover:bg-white/10 hover:text-white"
           }`}
         >
           {value}
-        </div>
+        </button>
       ))}
     </div>
   );
