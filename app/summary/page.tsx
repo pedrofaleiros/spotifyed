@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { getUserProfile, SpotifyUserProfile } from "@/services/userServices";
 import Loading from "../components/Loading";
 import AppBarUser from "../components/AppBarUser";
-import UserTopTracks from "../components/UserTopTracks";
+import SummaryDashboard from "../components/SummaryDashboard";
 
-export default function Home() {
+export default function SummaryPage() {
   const [userData, setUserData] = useState<SpotifyUserProfile | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,10 +96,10 @@ export default function Home() {
       <AppBarUser
         userData={userData}
         onLogout={handleLogout}
-        activePage="ranking"
+        activePage="summary"
       />
 
-      <UserTopTracks token={accessToken} />
+      <SummaryDashboard token={accessToken} />
     </main>
   );
 }
