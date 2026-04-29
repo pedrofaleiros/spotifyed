@@ -37,6 +37,7 @@ describe("Spotify API routes", () => {
     expect(url.searchParams.get("scope")).toBe(
       "user-read-private user-read-email user-top-read playlist-modify-public"
     );
+    expect(url.searchParams.get("show_dialog")).toBe("true");
     expect(url.searchParams.get("state")).toBeTruthy();
   });
 

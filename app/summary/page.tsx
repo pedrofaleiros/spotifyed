@@ -6,6 +6,11 @@ import { getUserProfile, SpotifyUserProfile } from "@/services/userServices";
 import Loading from "../components/Loading";
 import AppBarUser from "../components/AppBarUser";
 import SummaryDashboard from "../components/SummaryDashboard";
+import {
+  clearStoredAuth,
+  getStoredAuth,
+  markLogoutIntent,
+} from "../authStorage";
 
 export default function SummaryPage() {
   const [userData, setUserData] = useState<SpotifyUserProfile | null>(null);
@@ -16,14 +21,15 @@ export default function SummaryPage() {
   const router = useRouter();
 
   const clearAuth = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("expires_in");
+    clearStoredAuth();
   };
 
   const handleLogout = () => {
     clearAuth();
-    router.push("/");
+    markLogoutIntent();
+    setUserData(null);
+    setAccessToken(null);
+    router.replace("/");
   };
 
   useEffect(() => {
@@ -46,7 +52,7 @@ export default function SummaryPage() {
         setUserData(null);
         setAccessToken(null);
         setErrorMessage("Não foi possível carregar seu perfil do Spotify.");
-        router.push("/");
+        router.replace("/");
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -54,16 +60,15 @@ export default function SummaryPage() {
       }
     };
 
-    const token = localStorage.getItem("access_token");
-    const expiresIn = localStorage.getItem("expires_in");
+    const storedAuth = getStoredAuth();
 
-    if (!token || Date.now() > Number(expiresIn)) {
+    if (!storedAuth || Date.now() > Number(storedAuth.expiresIn)) {
       clearAuth();
-      router.push("/");
+      router.replace("/");
       return;
     }
 
-    fetchUserData(token);
+    fetchUserData(storedAuth.accessToken);
 
     return () => {
       isMounted = false;
@@ -79,7 +84,7 @@ export default function SummaryPage() {
           <p className="text-base font-semibold">{errorMessage}</p>
           <button
             className="mt-4 rounded-md bg-green-400 px-4 py-2 text-sm font-semibold text-gray-950 transition hover:bg-green-300"
-            onClick={() => router.push("/")}
+            onClick={() => router.replace("/")}
             type="button"
           >
             Entrar novamente
