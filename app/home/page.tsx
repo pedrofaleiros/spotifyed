@@ -45,10 +45,10 @@ export default function Home() {
   if (!userData || !accessToken) return <Loading />;
 
   return (
-    <div>
+    <main className="min-h-screen bg-gray-950 text-white">
       <AppBarUser userData={userData} onLogout={handleLogout} />
 
       <UserTopTracks token={accessToken} />
-    </div>
+    </main>
   );
 }

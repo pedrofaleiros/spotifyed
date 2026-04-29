@@ -12,6 +12,7 @@ export interface UserItemsTracks {
 export interface TrackObject {
     album: AlbumObject,
     artists: ArtistObject[],
+    external_urls: { spotify: string },
     name: string,
     id: string,
     popularity: number,

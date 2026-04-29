@@ -17,19 +17,20 @@ const TimeRangeComponent: React.FC<TimeRangeComponentProps> = ({
   ];
 
   return (
-    <div className="flex flex-row gap-2 items-center">
+    <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-gray-950 p-1">
       {timeRangeOptions.map((option) => (
-        <div
+        <button
+          type="button"
           key={option.value}
           onClick={() => setTimeRange(option.value)}
-          className={`cursor-pointer rounded-full px-2 py-1 font-medium ${
+          className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition ${
             timeRange === option.value
-              ? "bg-green-600 text-gray-950"
-              : "border-green-600 border-2 text-gray-300"
+              ? "bg-green-400 text-gray-950"
+              : "text-gray-400 hover:bg-white/10 hover:text-white"
           }`}
         >
           {option.label}
-        </div>
+        </button>
       ))}
     </div>
   );
