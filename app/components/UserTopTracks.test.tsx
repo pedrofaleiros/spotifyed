@@ -3,10 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import UserTopTracks from "./UserTopTracks";
 import {
+  getUserTopItemsArtists,
   getUserTopItemsTracks,
   ItemsTimeRange,
+  TopArtistObject,
   TrackObject,
 } from "@/services/itemsService";
+import { createPlaylistFromTracks } from "@/services/playlistService";
 
 vi.mock("@/services/itemsService", async () => {
   const actual = await vi.importActual<typeof import("@/services/itemsService")>(
@@ -15,17 +18,25 @@ vi.mock("@/services/itemsService", async () => {
 
   return {
     ...actual,
+    getUserTopItemsArtists: vi.fn(),
     getUserTopItemsTracks: vi.fn(),
   };
 });
 
+vi.mock("@/services/playlistService", () => ({
+  createPlaylistFromTracks: vi.fn(),
+}));
+
 const mockedGetUserTopItemsTracks = vi.mocked(getUserTopItemsTracks);
+const mockedGetUserTopItemsArtists = vi.mocked(getUserTopItemsArtists);
+const mockedCreatePlaylistFromTracks = vi.mocked(createPlaylistFromTracks);
 
 function makeTrack(id = "track-1"): TrackObject {
   return {
     id,
     name: `Track ${id}`,
     popularity: 88,
+    uri: `spotify:track:${id}`,
     external_urls: { spotify: `https://spotify.test/${id}` },
     artists: [
       {
@@ -45,9 +56,23 @@ function makeTrack(id = "track-1"): TrackObject {
   };
 }
 
+function makeArtist(id = "artist-1"): TopArtistObject {
+  return {
+    id,
+    name: `Artist ${id}`,
+    popularity: 82,
+    genres: ["rock", "indie"],
+    followers: { total: 1000 },
+    images: [],
+    external_urls: { spotify: `https://spotify.test/${id}` },
+  };
+}
+
 describe("UserTopTracks", () => {
   beforeEach(() => {
     mockedGetUserTopItemsTracks.mockReset();
+    mockedGetUserTopItemsArtists.mockReset();
+    mockedCreatePlaylistFromTracks.mockReset();
   });
 
   it("shows the initial loading state", () => {
@@ -80,6 +105,9 @@ describe("UserTopTracks", () => {
       screen.getByText("1 faixas no ranking de último mês.")
     ).toBeInTheDocument();
     expect(screen.getByText("Música e artista")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Criar playlist" })
+    ).toBeInTheDocument();
   });
 
   it("renders the empty state when Spotify returns no tracks", async () => {
@@ -164,6 +192,186 @@ describe("UserTopTracks", () => {
         30
       )
     );
+  });
+
+  it("switches to top artists and hides playlist creation", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeTrack()],
+    });
+    mockedGetUserTopItemsArtists.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeArtist()],
+    });
+
+    render(<UserTopTracks token="token" />);
+    expect(await screen.findByText("Track track-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Artistas" }));
+
+    expect(await screen.findByText("Artist artist-1")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mockedGetUserTopItemsArtists).toHaveBeenCalledWith(
+        "token",
+        ItemsTimeRange.short_term,
+        10
+      )
+    );
+    expect(
+      screen.queryByRole("button", { name: "Criar playlist" })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Artista")).toBeInTheDocument();
+  });
+
+  it("renders the empty state for top artists", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeTrack()],
+    });
+    mockedGetUserTopItemsArtists.mockResolvedValue({
+      limit: 10,
+      total: 0,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [],
+    });
+
+    render(<UserTopTracks token="token" />);
+    expect(await screen.findByText("Track track-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Artistas" }));
+
+    expect(
+      await screen.findByText(
+        "Nenhum artista encontrado para esse período. Tente selecionar 6 meses ou 1 ano."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("treats a missing artists items array as empty", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 0,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [],
+    });
+    mockedGetUserTopItemsArtists.mockResolvedValue({
+      limit: 10,
+      total: 0,
+      offset: 0,
+      next: "",
+      previous: "",
+    } as Awaited<ReturnType<typeof getUserTopItemsArtists>>);
+
+    render(<UserTopTracks token="token" />);
+    expect(
+      await screen.findByText(
+        "Nenhuma faixa encontrada para esse período. Tente selecionar 6 meses ou 1 ano."
+      )
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Artistas" }));
+
+    expect(
+      await screen.findByText(
+        "Nenhum artista encontrado para esse período. Tente selecionar 6 meses ou 1 ano."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("renders an error message when loading artists fails", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeTrack()],
+    });
+    mockedGetUserTopItemsArtists.mockRejectedValue(new Error("bad token"));
+
+    render(<UserTopTracks token="token" />);
+    expect(await screen.findByText("Track track-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Artistas" }));
+
+    expect(
+      await screen.findByText(
+        "Não foi possível carregar os artistas mais ouvidos dessa conta."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("creates a playlist from the visible tracks", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeTrack()],
+    });
+    mockedCreatePlaylistFromTracks.mockResolvedValue({
+      id: "playlist-1",
+      name: "Spotifyed - Top do último mês",
+      external_urls: { spotify: "https://spotify.test/playlist" },
+    });
+
+    render(<UserTopTracks token="token" />);
+    expect(await screen.findByText("Track track-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Criar playlist" }));
+
+    await waitFor(() =>
+      expect(mockedCreatePlaylistFromTracks).toHaveBeenCalledWith(
+        "token",
+        [makeTrack()],
+        ItemsTimeRange.short_term
+      )
+    );
+    expect(
+      await screen.findByRole("link", {
+        name: "Spotifyed - Top do último mês",
+      })
+    ).toHaveAttribute("href", "https://spotify.test/playlist");
+  });
+
+  it("shows an error when playlist creation fails", async () => {
+    mockedGetUserTopItemsTracks.mockResolvedValue({
+      limit: 10,
+      total: 1,
+      offset: 0,
+      next: "",
+      previous: "",
+      items: [makeTrack()],
+    });
+    mockedCreatePlaylistFromTracks.mockRejectedValue(new Error("spotify failed"));
+
+    render(<UserTopTracks token="token" />);
+    expect(await screen.findByText("Track track-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Criar playlist" }));
+
+    expect(
+      await screen.findByText(
+        "Não foi possível criar a playlist com essas músicas."
+      )
+    ).toBeInTheDocument();
   });
 
   it("shows the updating state while refreshing existing tracks", async () => {

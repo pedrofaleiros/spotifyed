@@ -6,13 +6,19 @@ import Loading from "./Loading";
 import { SetLimitComponent } from "./SetLimitComponent";
 import TimeRangeComponent from "./TimeRangeComponent";
 import TrackComponent from "./TrackComponent";
-import { ItemsTimeRange, TrackObject } from "@/services/itemsService";
+import ArtistComponent from "./ArtistComponent";
+import {
+  ItemsTimeRange,
+  TopArtistObject,
+  TrackObject,
+} from "@/services/itemsService";
 
 function makeTrack(overrides: Partial<TrackObject> = {}): TrackObject {
   return {
     id: "track-1",
     name: "Track Name",
     popularity: 75,
+    uri: "spotify:track:track-1",
     external_urls: { spotify: "https://spotify.test/track" },
     artists: [
       {
@@ -29,6 +35,19 @@ function makeTrack(overrides: Partial<TrackObject> = {}): TrackObject {
       images: [{ url: "https://image.test/album.jpg" }],
       external_urls: { spotify: "https://spotify.test/album" },
     },
+    ...overrides,
+  };
+}
+
+function makeArtist(overrides: Partial<TopArtistObject> = {}): TopArtistObject {
+  return {
+    id: "artist-1",
+    name: "Artist Name",
+    popularity: 82,
+    genres: ["rock", "indie"],
+    followers: { total: 1200 },
+    images: [{ url: "https://image.test/artist.jpg" }],
+    external_urls: { spotify: "https://spotify.test/artist" },
     ...overrides,
   };
 }
@@ -166,5 +185,41 @@ describe("shared components", () => {
   it("clamps popularity above 100", () => {
     render(<TrackComponent index={0} track={makeTrack({ popularity: 120 })} />);
     expect(screen.getByText("100%")).toBeInTheDocument();
+  });
+
+  it("renders an artist with image, genres, followers and popularity", () => {
+    render(<ArtistComponent index={2} artist={makeArtist()} />);
+
+    expect(screen.getByText("#3")).toBeInTheDocument();
+    expect(screen.getByRole("img")).toHaveAttribute("alt", "Foto de Artist Name");
+    expect(screen.getByRole("link", { name: "Artist Name" })).toHaveAttribute(
+      "href",
+      "https://spotify.test/artist"
+    );
+    expect(screen.getAllByText("rock, indie")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("1.200 seguidores")[0]).toBeInTheDocument();
+    expect(screen.getByText("82%")).toBeInTheDocument();
+  });
+
+  it("renders an artist fallback when optional Spotify data is missing", () => {
+    const { container } = render(
+      <ArtistComponent
+        index={0}
+        artist={makeArtist({
+          popularity: -10,
+          genres: [],
+          followers: { total: 0 },
+          images: [],
+        })}
+      />
+    );
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Gêneros indisponíveis")[0]).toBeInTheDocument();
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(container.querySelectorAll("a")[0]).toHaveAttribute(
+      "href",
+      "https://spotify.test/artist"
+    );
   });
 });
