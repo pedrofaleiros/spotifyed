@@ -105,7 +105,7 @@ describe("summary page", () => {
       await screen.findByText("Não foi possível carregar seu perfil do Spotify.")
     ).toBeInTheDocument();
     expect(localStorage.getItem("access_token")).toBeNull();
-    expect(replaceMock).toHaveBeenCalledWith("/");
+    expect(replaceMock).not.toHaveBeenCalled();
 
     await userEvent.click(screen.getByRole("button", { name: "Entrar novamente" }));
     expect(replaceMock).toHaveBeenCalledWith("/");
