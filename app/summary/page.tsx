@@ -33,6 +33,8 @@ export default function SummaryPage() {
   };
 
   useEffect(() => {
+    if (errorMessage) return;
+
     let isMounted = true;
 
     const fetchUserData = async (token: string) => {
@@ -52,7 +54,6 @@ export default function SummaryPage() {
         setUserData(null);
         setAccessToken(null);
         setErrorMessage("Não foi possível carregar seu perfil do Spotify.");
-        router.replace("/");
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -73,7 +74,7 @@ export default function SummaryPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [errorMessage, router]);
 
   if (isLoading) return <Loading />;
 
